@@ -296,3 +296,51 @@ function PublishToMyGet-Module {
 
   Remove-Item -Path "$PathToModule\temp" -Recurse -Force
 }
+
+function Remove-tjDashesInMac {
+  param ($MacWithDashes)
+
+  $mac1 = $MacWithDashes.Split("-")[0]
+  $mac2 = $MacWithDashes.Split("-")[1]
+  $mac3 = $MacWithDashes.Split("-")[2]
+  $mac4 = $MacWithDashes.Split("-")[3]
+  $mac5 = $MacWithDashes.Split("-")[4]
+  $mac6 = $MacWithDashes.Split("-")[5]
+  $mac = $mac1 + $mac2 +$mac3 + $mac4 +$mac5 +$mac6
+  $mac
+}
+function Show-tjVmSwitch {
+  <#
+   Problem: "VMNetworkAdapter" hat keine Property "IpAddress", aber eine Property "MacAddress"
+   Lösung: Suche zu dem VMNetworkAdapter den NetAdapter mit der gleichen MAC Adresse.
+  
+                      IP     MAC
+    ----------------------------
+    VMNetworkAdapter  nein   ja
+    NetAdapter        ja     ja
+  #>
+
+  $VMSwitches = Get-VMSwitch
+  $NetAdapters = Get-NetAdapter | where Virtual -EQ $true
+
+  foreach ($Switch in $VMSwitches) {
+      $VMNetworkAdapter = Get-VMNetworkAdapter -ManagementOS | where SwitchName -eq $Switch.Name
+      $VMNA_Mac = $VMNetworkAdapter.MacAddress
+
+      Clear-Variable NetAdapter
+      foreach ($NA in $NetAdapters) {
+        $NA_Mac = Remove-tjDashesInMac $NA.MacAddress
+        if ($NA_Mac -eq $VMNA_Mac) {$NetAdapter=$NA}
+      }
+
+      $NetIPAddress = Get-NetIPAddress -AddressFamily IPv4 -InterfaceIndex $NetAdapter.InterfaceIndex
+
+      $Switch | 
+        select @{n="VMSwitch";e={$_.Name}},`
+               @{n="VMNetworkAdapter";e={$VMNetworkAdapter.Name}},`
+               @{n="NetAdapter";e={$NetAdapter.Name}},`
+               @{n="IPAddress";e={$NetIPAddress.IPAddress}},`
+               @{n="PrefixLength";e={$NetIPAddress.PrefixLength}},`
+               @{n="PrefixOrigin";e={$NetIPAddress.PrefixOrigin}}
+  }
+}
