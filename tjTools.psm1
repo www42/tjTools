@@ -323,21 +323,28 @@ function Show-tjVmSwitch {
   $VMSwitches = Get-VMSwitch
   $NetAdapters = Get-NetAdapter | where Virtual -EQ $true
   $NetAdapter = $null
+  $NetIPAddress = $null
 
   foreach ($Switch in $VMSwitches) {
-      $VMNetworkAdapter = Get-VMNetworkAdapter -ManagementOS | where SwitchName -eq $Switch.Name
-      $VMNA_Mac = $VMNetworkAdapter.MacAddress
+      if ($Switch.SwitchType -eq "Private") {
+                $VMNetworkAdapter = $null
+                $NetAdapter = $null
+                $NetIPAddress = $null}
+      else {
+         $VMNetworkAdapter = Get-VMNetworkAdapter -ManagementOS | where SwitchName -eq $Switch.Name
+         $VMNA_Mac = $VMNetworkAdapter.MacAddress
 
-      Clear-Variable NetAdapter
-      foreach ($NA in $NetAdapters) {
-        $NA_Mac = Remove-tjDashesInMac $NA.MacAddress
-        if ($NA_Mac -eq $VMNA_Mac) {$NetAdapter=$NA}
-      }
+         Clear-Variable -Name NetAdapter
+         foreach ($NA in $NetAdapters) {
+           $NA_Mac = Remove-tjDashesInMac $NA.MacAddress
+           if ($NA_Mac -eq $VMNA_Mac) {$NetAdapter=$NA}
+         }
 
-      $NetIPAddress = Get-NetIPAddress -AddressFamily IPv4 -InterfaceIndex $NetAdapter.InterfaceIndex
+         $NetIPAddress = Get-NetIPAddress -AddressFamily IPv4 -InterfaceIndex $NetAdapter.InterfaceIndex}
 
       $Switch | 
         select @{n="VMSwitch";e={$_.Name}},`
+               @{n="SwitchType";e={$_.SwitchType}},`
                @{n="VMNetworkAdapter";e={$VMNetworkAdapter.Name}},`
                @{n="NetAdapter";e={$NetAdapter.Name}},`
                @{n="IPAddress";e={$NetIPAddress.IPAddress}},`
