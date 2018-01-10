@@ -322,6 +322,7 @@ function Show-tjVmSwitch {
 
   $VMSwitches = Get-VMSwitch
   $NetAdapters = Get-NetAdapter | where Virtual -EQ $true
+  $NetAdapter = $null
 
   foreach ($Switch in $VMSwitches) {
       $VMNetworkAdapter = Get-VMNetworkAdapter -ManagementOS | where SwitchName -eq $Switch.Name
