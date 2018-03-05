@@ -51,11 +51,12 @@ function Add-tjDockerWindowsBaseImageTag {
    The tag is the OS version of the Windows base image found by 'docker inspect'.
 
    Due to Windows updates there are many 'latest' base images. Tagging makes it easy
-   to differ these versions. (What is the real 'latest'?)
+   to differ these versions.
 
    docker image list
      
                           before tagging
+                          --------------
 
    REPOSITORY                    TAG               IMAGE ID         CREATED          SIZE
    microsoft/windowsservercore   latest            2cddde20d95d     2 weeks ago      10.3GB
@@ -63,6 +64,7 @@ function Add-tjDockerWindowsBaseImageTag {
 
 
                            after tagging
+                           -------------
      
    REPOSITORY                    TAG               IMAGE ID         CREATED          SIZE
    microsoft/windowsservercore   10.0.14393.1715   2cddde20d95d     2 weeks ago      10.3GB
@@ -73,25 +75,23 @@ function Add-tjDockerWindowsBaseImageTag {
 .PARAMETER BaseImage
    Specifies the Windows baseimage name (a.k.a. repository)
 
-.PARAMETER Tag
-   Specifies the tag already set to the Windows base image. Default is 'latest'.
+.PARAMETER Id
+   Specifies the baseimage id.
 
 .EXAMPLE
-   Set-tjDockerBaseImageTag -BaseImage microsoft/windowsservercore
+   Set-tjDockerBaseImageTag -BaseImage microsoft/windowsservercore -Id 2cddde20d95d
 #>
 
 [CmdletBinding()]Param(
 [Parameter(Mandatory=$true,Position=1)][string]$BaseImage,
-[Parameter(Mandatory=$false,Position=2)][string]$Tag = "latest"
+[Parameter(Mandatory=$true,Position=2)][string]$Id
 )
 
-$SourceImage = $BaseImage + ':' + $Tag
-
-$OsVersion = docker inspect --format='{{.OsVersion}}' $SourceImage
+$OsVersion = docker inspect --format='{{.OsVersion}}' $Id
 
 $TargetImage = $BaseImage + ':' + $OsVersion
 
-docker tag $SourceImage $TargetImage
+docker tag $Id $TargetImage
 
 }
 
